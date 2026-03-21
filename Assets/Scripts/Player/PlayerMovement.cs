@@ -3,38 +3,43 @@ using UnityEngine;
 public class PlayerMovement : MonoBehaviour
 {
     [Header("Ground Movement")]
-    [SerializeField] private float moveSpeed = 5f; // Speed used only while the player is on the ground and not charging
+    [SerializeField] private float moveSpeed = 5f;
 
     [Header("Jump")]
-    [SerializeField] private float minJumpForce = 5f;        // Minimum upward force for a quick tap jump
-    [SerializeField] private float maxJumpForce = 12f;       // Maximum upward force for a fully charged jump
-    [SerializeField] private float maxChargeTime = 1.0f;     // Maximum amount of time the player can charge a jump
-    [SerializeField] private float horizontalJumpForce = 5f; // Horizontal force applied when jumping left or right
+    [SerializeField] private float minJumpForce = 5f;
+    [SerializeField] private float maxJumpForce = 12f;
+    [SerializeField] private float maxChargeTime = 1.0f;
+    [SerializeField] private float horizontalJumpForce = 5f;
+
+    [Header("Wall Bounce")]
+    [SerializeField] private float wallBounceMultiplier = 1f;
+    [SerializeField] private float minimumWallBounceSpeed = 0.5f;
+    [SerializeField] private float wallBounceCooldown = 0.1f;
 
     [Header("Ground Check")]
-    [SerializeField] private Transform groundCheck;            // Point placed slightly below the player
-    [SerializeField] private float groundCheckRadius = 0.15f;  // Radius of the ground detection circle
-    [SerializeField] private LayerMask groundLayer;            // Which layer counts as ground
+    [SerializeField] private Transform groundCheck;
+    [SerializeField] private Vector2 groundCheckBoxSize = new Vector2(0.6f, 0.15f);
+    [SerializeField] private LayerMask groundLayer;
 
-    private Rigidbody2D rb;            // Reference to the player's Rigidbody2D
-    private float moveInput;           // Horizontal movement input while on the ground
-    private bool isGrounded;           // True when touching the ground
-    private bool wasGrounded;          // Stores whether the player was grounded on the previous frame
-    private bool isCharging;           // True while holding Space to charge a jump
-    private float currentChargeTime;   // How long Space has been held
-
-    private float queuedJumpDirection; // Stores intended jump direction while charging: -1 left, 0 straight, 1 right
+    private Rigidbody2D rb;
+    private float moveInput;
+    private bool isGrounded;
+    private bool isCharging;
+    private float currentChargeTime;
+    private float queuedJumpDirection;
+    private float lastPressedHorizontalDirection;
+    private bool hasLockedJumpDirection;
+    private float lastWallBounceTime = float.NegativeInfinity;
 
     private void Awake()
     {
-        // Get the Rigidbody2D attached to this GameObject
         rb = GetComponent<Rigidbody2D>();
     }
 
     private void Update()
     {
         CheckIfGrounded();
-        HandleGroundStateTransitions();
+        UpdateHorizontalDirectionPriority();
         HandleMovementInput();
         HandleJumpInput();
     }
@@ -46,72 +51,47 @@ public class PlayerMovement : MonoBehaviour
 
     private void CheckIfGrounded()
     {
-        // Prevent errors if GroundCheck was not assigned in the Inspector
         if (groundCheck == null)
         {
             Debug.LogWarning("GroundCheck is not assigned on PlayerMovement.");
             return;
         }
 
-        // Check whether the circle under the player is touching the ground layer
-        isGrounded = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
+        isGrounded = Physics2D.OverlapBox(groundCheck.position, groundCheckBoxSize, 0f, groundLayer);
     }
 
-    private void HandleGroundStateTransitions()
+    private void UpdateHorizontalDirectionPriority()
     {
-        // If the player was grounded last frame and is now airborne,
-        // they have just left the ground, so clear old queued jump direction
-        if (wasGrounded && !isGrounded)
+        if (Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.LeftArrow))
         {
-            queuedJumpDirection = 0f;
+            lastPressedHorizontalDirection = -1f;
         }
 
-        // Store current grounded state for next frame
-        wasGrounded = isGrounded;
+        if (Input.GetKeyDown(KeyCode.D) || Input.GetKeyDown(KeyCode.RightArrow))
+        {
+            lastPressedHorizontalDirection = 1f;
+        }
     }
 
     private void HandleMovementInput()
     {
-        // Read left/right input manually
-        bool movingLeft = Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow);
-        bool movingRight = Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow);
-
-        // If the player is in the air, they should not be able to move horizontally
         if (!isGrounded)
         {
             moveInput = 0f;
             return;
         }
 
-        // If the player is charging a jump, lock ground movement
         if (isCharging)
         {
             moveInput = 0f;
             return;
         }
 
-        // Normal grounded movement only happens when standing on the ground and not charging
-        if (movingLeft && movingRight)
-        {
-            moveInput = 0f;
-        }
-        else if (movingLeft)
-        {
-            moveInput = -1f;
-        }
-        else if (movingRight)
-        {
-            moveInput = 1f;
-        }
-        else
-        {
-            moveInput = 0f;
-        }
+        moveInput = GetHeldHorizontalDirection();
     }
 
     private void HandleGroundMovement()
     {
-        // Allow horizontal movement only while grounded and not charging
         if (isGrounded && !isCharging)
         {
             rb.linearVelocity = new Vector2(moveInput * moveSpeed, rb.linearVelocity.y);
@@ -120,91 +100,165 @@ public class PlayerMovement : MonoBehaviour
 
     private void HandleJumpInput()
     {
-        // Start charging only if the player is grounded and just pressed Space
         if (isGrounded && Input.GetKeyDown(KeyCode.Space))
         {
             isCharging = true;
             currentChargeTime = 0f;
-            queuedJumpDirection = 0f; // Start with a straight-up jump unless a direction is chosen during charging
+            queuedJumpDirection = 0f;
+            hasLockedJumpDirection = false;
 
-            // Stop all horizontal ground movement while charging
             rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
         }
 
-        // While charging, continuously update the intended jump direction
-        if (isCharging)
+        if (!isCharging)
         {
-            UpdateQueuedJumpDirection();
+            return;
         }
 
-        // Increase charge while Space is being held
-        if (isCharging && Input.GetKey(KeyCode.Space))
+        if (!isGrounded)
         {
-            currentChargeTime += Time.deltaTime;
-            currentChargeTime = Mathf.Clamp(currentChargeTime, 0f, maxChargeTime);
+            CancelCharge();
+            return;
         }
 
-        // Perform the jump when Space is released
-        if (isCharging && Input.GetKeyUp(KeyCode.Space))
+        TryLockJumpDirection();
+
+        if (Input.GetKey(KeyCode.Space))
+        {
+            currentChargeTime = Mathf.Min(currentChargeTime + Time.deltaTime, maxChargeTime);
+        }
+
+        if (Input.GetKeyUp(KeyCode.Space))
         {
             Jump();
         }
     }
 
-    private void UpdateQueuedJumpDirection()
+    private float GetHeldHorizontalDirection()
     {
-        // Read left/right input while charging
         bool movingLeft = Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow);
         bool movingRight = Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow);
 
-        // If only left is held, queue a left diagonal jump
         if (movingLeft && !movingRight)
         {
-            queuedJumpDirection = -1f;
+            return -1f;
         }
-        // If only right is held, queue a right diagonal jump
-        else if (movingRight && !movingLeft)
+
+        if (movingRight && !movingLeft)
+        {
+            return 1f;
+        }
+
+        if (movingLeft && movingRight)
+        {
+            return lastPressedHorizontalDirection;
+        }
+
+        return 0f;
+    }
+
+    private void TryLockJumpDirection()
+    {
+        if (hasLockedJumpDirection)
+        {
+            return;
+        }
+
+        bool pressedLeft = Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.LeftArrow);
+        bool pressedRight = Input.GetKeyDown(KeyCode.D) || Input.GetKeyDown(KeyCode.RightArrow);
+
+        if (pressedLeft && !pressedRight)
+        {
+            queuedJumpDirection = -1f;
+            hasLockedJumpDirection = true;
+            return;
+        }
+
+        if (pressedRight && !pressedLeft)
         {
             queuedJumpDirection = 1f;
+            hasLockedJumpDirection = true;
+            return;
         }
-        // If both or neither are held, queue a straight jump
-        else
+
+        if (pressedLeft && pressedRight)
         {
-            queuedJumpDirection = 0f;
+            queuedJumpDirection = lastPressedHorizontalDirection;
+            hasLockedJumpDirection = true;
         }
     }
 
     private void Jump()
     {
-        // Convert charge time into a 0 to 1 percentage
-        float chargePercent = currentChargeTime / maxChargeTime;
-
-        // Calculate upward jump force between the minimum and maximum
+        float chargePercent = maxChargeTime > 0f ? currentChargeTime / maxChargeTime : 1f;
         float verticalJumpForce = Mathf.Lerp(minJumpForce, maxJumpForce, chargePercent);
-
-        // Convert queued direction into actual horizontal jump velocity
         float jumpDirectionX = queuedJumpDirection * horizontalJumpForce;
 
-        // Replace current velocity so the jump is consistent and not affected by leftover movement
         rb.linearVelocity = Vector2.zero;
-
-        // Apply the jump as a single instant velocity change
         rb.linearVelocity = new Vector2(jumpDirectionX, verticalJumpForce);
 
-        // Reset charging state
+        CancelCharge();
+    }
+
+    private void CancelCharge()
+    {
         isCharging = false;
         currentChargeTime = 0f;
+        queuedJumpDirection = 0f;
+        hasLockedJumpDirection = false;
+    }
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        TryWallBounce(collision);
+    }
+
+    private void OnCollisionStay2D(Collision2D collision)
+    {
+        TryWallBounce(collision);
+    }
+
+    private void TryWallBounce(Collision2D collision)
+    {
+        if (isGrounded || isCharging)
+        {
+            return;
+        }
+
+        if (Time.time < lastWallBounceTime + wallBounceCooldown)
+        {
+            return;
+        }
+
+        for (int i = 0; i < collision.contactCount; i++)
+        {
+            Vector2 normal = collision.GetContact(i).normal;
+
+            if (Mathf.Abs(normal.x) < 0.75f)
+            {
+                continue;
+            }
+
+            float horizontalImpactSpeed = Mathf.Abs(collision.relativeVelocity.x);
+            if (horizontalImpactSpeed < minimumWallBounceSpeed)
+            {
+                continue;
+            }
+
+            rb.linearVelocity = new Vector2(normal.x * horizontalImpactSpeed * wallBounceMultiplier, rb.linearVelocity.y);
+            lastWallBounceTime = Time.time;
+            return;
+        }
     }
 
     private void OnDrawGizmosSelected()
     {
-        // Draw the ground check circle in the Scene view for debugging
         if (groundCheck == null)
         {
             return;
         }
 
         Gizmos.color = Color.yellow;
-        Gizmos.DrawWireSphere(groundCheck.position, groundCheckRadius);
+        Gizmos.DrawWireCube(groundCheck.position, groundCheckBoxSize);
     }
 }
