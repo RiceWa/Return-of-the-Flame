@@ -3,31 +3,35 @@ using UnityEngine.Rendering.Universal;
 
 public class Torch : MonoBehaviour
 {
-    [SerializeField] private Light2D torchLight; // The light that turns on when the torch is lit
-    [SerializeField] private SpriteRenderer torchSprite; // The visible torch sprite
-    [SerializeField] private Color unlitColor = Color.gray; // Color used before the torch is lit
-    [SerializeField] private Color litColor = Color.white; // Color used after the torch is lit
+    [SerializeField] private Light2D torchLight;
+    [SerializeField] private SpriteRenderer torchSprite;
+    [SerializeField] private Color unlitColor = Color.gray;
+    [SerializeField] private Color litColor = Color.white;
+    [SerializeField] private bool startLit = false;
+    [SerializeField] private AudioClip torchClip;
 
-    private bool isLit = false; // Prevents the torch from being lit multiple times
+    private AudioSource audioSource;
+    private bool isLit = false;
 
     private void Start()
     {
-        // Make sure the torch starts turned off
+        audioSource = GetComponent<AudioSource>();
+
+        isLit = startLit;
+
         if (torchLight != null)
         {
-            torchLight.enabled = false;
+            torchLight.enabled = startLit;
         }
 
-        // Make the torch look unlit at the start
         if (torchSprite != null)
         {
-            torchSprite.color = unlitColor;
+            torchSprite.color = startLit ? litColor : unlitColor;
         }
     }
 
     private void OnTriggerEnter2D(Collider2D other)
     {
-        // Only react if the player touches the torch and it is not already lit
         if (!isLit && other.CompareTag("Player"))
         {
             LightTorch();
@@ -38,16 +42,19 @@ public class Torch : MonoBehaviour
     {
         isLit = true;
 
-        // Turn on the light
         if (torchLight != null)
         {
             torchLight.enabled = true;
         }
 
-        // Change the torch sprite so it looks lit
         if (torchSprite != null)
         {
             torchSprite.color = litColor;
+        }
+
+        if (audioSource != null && torchClip != null)
+        {
+            audioSource.PlayOneShot(torchClip);
         }
     }
 }

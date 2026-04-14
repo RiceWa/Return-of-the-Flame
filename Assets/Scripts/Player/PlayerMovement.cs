@@ -21,24 +21,45 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private Vector2 groundCheckBoxSize = new Vector2(0.6f, 0.15f);
     [SerializeField] private LayerMask groundLayer;
 
+    [Header("Audio")]
+    private AudioSource audioSource;
+    [SerializeField] private AudioClip jumpClip;
+    [SerializeField] private AudioClip landClip;
+
+    private bool wasGrounded;
+
     private Rigidbody2D rb;
     private float moveInput;
     private bool isGrounded;
     private bool isCharging;
     private float currentChargeTime;
-    private float queuedJumpDirection;
     private float lastPressedHorizontalDirection;
-    private bool hasLockedJumpDirection;
     private float lastWallBounceTime = float.NegativeInfinity;
+
+    // New
+    private float chargedJumpDirection;
+    private bool jumpedThisFrame;
 
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
+        audioSource = GetComponent<AudioSource>();
     }
 
     private void Update()
     {
         CheckIfGrounded();
+
+        if (!wasGrounded && isGrounded)
+        {
+            if (audioSource != null && landClip != null)
+            {
+                audioSource.PlayOneShot(landClip);
+            }
+        }
+
+        wasGrounded = isGrounded;
+
         UpdateHorizontalDirectionPriority();
         HandleMovementInput();
         HandleJumpInput();
@@ -47,6 +68,9 @@ public class PlayerMovement : MonoBehaviour
     private void FixedUpdate()
     {
         HandleGroundMovement();
+
+        // Clear after physics step
+        jumpedThisFrame = false;
     }
 
     private void CheckIfGrounded()
@@ -75,13 +99,7 @@ public class PlayerMovement : MonoBehaviour
 
     private void HandleMovementInput()
     {
-        if (!isGrounded)
-        {
-            moveInput = 0f;
-            return;
-        }
-
-        if (isCharging)
+        if (!isGrounded || isCharging)
         {
             moveInput = 0f;
             return;
@@ -92,6 +110,12 @@ public class PlayerMovement : MonoBehaviour
 
     private void HandleGroundMovement()
     {
+        // Do not let ground movement overwrite jump velocity
+        if (jumpedThisFrame)
+        {
+            return;
+        }
+
         if (isGrounded && !isCharging)
         {
             rb.linearVelocity = new Vector2(moveInput * moveSpeed, rb.linearVelocity.y);
@@ -104,8 +128,9 @@ public class PlayerMovement : MonoBehaviour
         {
             isCharging = true;
             currentChargeTime = 0f;
-            queuedJumpDirection = 0f;
-            hasLockedJumpDirection = false;
+
+            // Start with current held direction
+            chargedJumpDirection = GetHeldHorizontalDirection();
 
             rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
         }
@@ -121,11 +146,16 @@ public class PlayerMovement : MonoBehaviour
             return;
         }
 
-        TryLockJumpDirection();
-
         if (Input.GetKey(KeyCode.Space))
         {
             currentChargeTime = Mathf.Min(currentChargeTime + Time.deltaTime, maxChargeTime);
+
+            // Continuously remember latest held direction during charge
+            float heldDirection = GetHeldHorizontalDirection();
+            if (heldDirection != 0f)
+            {
+                chargedJumpDirection = heldDirection;
+            }
         }
 
         if (Input.GetKeyUp(KeyCode.Space))
@@ -157,45 +187,25 @@ public class PlayerMovement : MonoBehaviour
         return 0f;
     }
 
-    private void TryLockJumpDirection()
-    {
-        if (hasLockedJumpDirection)
-        {
-            return;
-        }
-
-        bool pressedLeft = Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.LeftArrow);
-        bool pressedRight = Input.GetKeyDown(KeyCode.D) || Input.GetKeyDown(KeyCode.RightArrow);
-
-        if (pressedLeft && !pressedRight)
-        {
-            queuedJumpDirection = -1f;
-            hasLockedJumpDirection = true;
-            return;
-        }
-
-        if (pressedRight && !pressedLeft)
-        {
-            queuedJumpDirection = 1f;
-            hasLockedJumpDirection = true;
-            return;
-        }
-
-        if (pressedLeft && pressedRight)
-        {
-            queuedJumpDirection = lastPressedHorizontalDirection;
-            hasLockedJumpDirection = true;
-        }
-    }
-
     private void Jump()
     {
         float chargePercent = maxChargeTime > 0f ? currentChargeTime / maxChargeTime : 1f;
         float verticalJumpForce = Mathf.Lerp(minJumpForce, maxJumpForce, chargePercent);
-        float jumpDirectionX = queuedJumpDirection * horizontalJumpForce;
+        float jumpDirectionX = chargedJumpDirection * horizontalJumpForce;
 
         rb.linearVelocity = Vector2.zero;
         rb.linearVelocity = new Vector2(jumpDirectionX, verticalJumpForce);
+
+        // Prevent ground movement from cancelling horizontal jump velocity
+        jumpedThisFrame = true;
+
+        // Force state away from grounded immediately
+        isGrounded = false;
+
+        if (audioSource != null && jumpClip != null)
+        {
+            audioSource.PlayOneShot(jumpClip);
+        }
 
         CancelCharge();
     }
@@ -204,8 +214,6 @@ public class PlayerMovement : MonoBehaviour
     {
         isCharging = false;
         currentChargeTime = 0f;
-        queuedJumpDirection = 0f;
-        hasLockedJumpDirection = false;
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
@@ -245,7 +253,11 @@ public class PlayerMovement : MonoBehaviour
                 continue;
             }
 
-            rb.linearVelocity = new Vector2(normal.x * horizontalImpactSpeed * wallBounceMultiplier, rb.linearVelocity.y);
+            rb.linearVelocity = new Vector2(
+                normal.x * horizontalImpactSpeed * wallBounceMultiplier,
+                rb.linearVelocity.y
+            );
+
             lastWallBounceTime = Time.time;
             return;
         }

@@ -84,7 +84,7 @@ TextureImporter:
   spriteMeshType: 1
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
-  spritePixelsToUnits: 100
+  spritePixelsToUnits: 16
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
   spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
@@ -149,12 +149,12 @@ TextureImporter:
       name: flames_0
       rect:
         serializedVersion: 2
-        x: 3
-        y: 50
-        width: 10
-        height: 20
+        x: 4
+        y: 51
+        width: 8
+        height: 18
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -171,12 +171,12 @@ TextureImporter:
       name: flames_1
       rect:
         serializedVersion: 2
-        x: 19
-        y: 50
-        width: 11
-        height: 21
+        x: 20
+        y: 51
+        width: 9
+        height: 19
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -193,12 +193,12 @@ TextureImporter:
       name: flames_2
       rect:
         serializedVersion: 2
-        x: 35
-        y: 51
-        width: 12
-        height: 21
+        x: 36
+        y: 52
+        width: 10
+        height: 19
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -215,12 +215,12 @@ TextureImporter:
       name: flames_3
       rect:
         serializedVersion: 2
-        x: 51
-        y: 51
-        width: 12
-        height: 16
+        x: 52
+        y: 52
+        width: 10
+        height: 14
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -237,12 +237,12 @@ TextureImporter:
       name: flames_4
       rect:
         serializedVersion: 2
-        x: 2
-        y: 29
-        width: 13
-        height: 15
+        x: 3
+        y: 30
+        width: 11
+        height: 13
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -259,12 +259,12 @@ TextureImporter:
       name: flames_5
       rect:
         serializedVersion: 2
-        x: 19
-        y: 29
-        width: 10
-        height: 19
+        x: 20
+        y: 30
+        width: 8
+        height: 17
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -281,12 +281,12 @@ TextureImporter:
       name: flames_6
       rect:
         serializedVersion: 2
-        x: 34
-        y: 29
-        width: 12
-        height: 16
+        x: 35
+        y: 30
+        width: 10
+        height: 14
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -303,12 +303,12 @@ TextureImporter:
       name: flames_7
       rect:
         serializedVersion: 2
-        x: 50
-        y: 28
-        width: 11
-        height: 15
+        x: 51
+        y: 29
+        width: 9
+        height: 13
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -325,12 +325,12 @@ TextureImporter:
       name: flames_8
       rect:
         serializedVersion: 2
-        x: 1
-        y: 5
-        width: 14
-        height: 17
+        x: 2
+        y: 6
+        width: 12
+        height: 15
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -347,12 +347,12 @@ TextureImporter:
       name: flames_9
       rect:
         serializedVersion: 2
-        x: 17
-        y: 4
-        width: 14
-        height: 21
+        x: 18
+        y: 5
+        width: 12
+        height: 19
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -369,12 +369,12 @@ TextureImporter:
       name: flames_10
       rect:
         serializedVersion: 2
-        x: 33
-        y: 5
-        width: 13
-        height: 18
+        x: 34
+        y: 6
+        width: 11
+        height: 16
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -391,12 +391,12 @@ TextureImporter:
       name: flames_11
       rect:
         serializedVersion: 2
-        x: 50
-        y: 4
-        width: 14
-        height: 18
+        x: 51
+        y: 5
+        width: 12
+        height: 16
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -413,7 +413,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 
+    spriteID: 83a85266df5ed453fb55f06c6279a552
     internalID: 0
     vertices: []
     indices: 
@@ -421,7 +421,9 @@ TextureImporter:
     weights: []
     secondaryTextures: []
     spriteCustomMetadata:
-      entries: []
+      entries:
+      - key: SpriteEditor.SliceSettings
+        value: '{"sliceOnImport":false,"gridCellCount":{"x":1.0,"y":1.0},"gridSpriteSize":{"x":64.0,"y":64.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":0,"keepEmptyRects":false,"isAlternate":false}'
     nameFileIdTable:
       flames_0: 6952255750235482898
       flames_1: -8580444318367042149
